@@ -85,7 +85,7 @@ async function saveUser() {
 const [data, formAction, isPending] = useActionState(saveUser,{message:''});
 ```
 Here:
-- **`saveUser`**:  action that to be perform on form submission, from the code snippet we can see that its a function that save the user info and after successful completion of this code it will send a result object
+- **`saveUser`**:  action that to be perform on form submission, from the code snippet we can see that its a function that save the user info, and after successful completion of this code it will send a result object that contains the message 
 ```js
 async function saveUser() {  
     // code to save the user
@@ -126,7 +126,7 @@ return (
   </form>
 )
 ```
-- **`data`**: output of `saveUser` function, if is print the data you'll get output as
+- **`data`**: output of `saveUser` function, if we print the data you'll get output as
 ```
 {
   message: "user saved successfully",
@@ -179,6 +179,21 @@ async function saveUser(prevState: any, fromData: FormData) {
     }
 }
 ```
+**in above code snippet the submit action is:**
+```jsx
+async function saveUser(prevState: any, fromData: FormData) {
+    const name = fromData.get('name') as string
+    // code to save the user
+    return{
+      message: "success",
+      data:{
+        name
+      }
+    }
+}
+```
+Here:
+
 - **`prevState`**: when you submit form multiple time then `saveUser` get called multiple time therefor `prevState` holds the last output of this function\
 **Note: in almost very cases we can't use prevState therefor we keep prevState as unknown**
 
