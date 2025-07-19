@@ -1,8 +1,9 @@
 # Content
 1. [Introduction](#introduction)
 2. [SSG, SSR & CSR](#ssg-ssr--csr)
-3. [Server Action](#server-action)
-4. [useActionState Hook](#useactionstate-hook)
+4. [Caching](#caching)
+4. [Server Action](#server-action)
+5. [useActionState Hook](#useactionstate-hook)
 
 # Introduction
 Next.js is a React-based web development framework used to build fast and user-friendly websites and web apps. It simplifies and adds extra power to React by providing features like:
@@ -52,6 +53,8 @@ its like combining Pre-rendering or Static Site Generation with  Client Side Ren
 Generate all HTML pages at clients browser
 
 **Note: you'll learn more about this in [SSG, SSR & CSR](#ssg-ssr--csr) topic** 
+
+
 
 
 [Go To Top](#content)
@@ -154,6 +157,160 @@ You open an empty box and wait for the contents to be delivered later.
 | Doesn’t change often                | ✅ SSG |
 | Needs fresh data on every visit     | ✅ SSR |
 | Is behind login or doesn't need SEO | ✅ CSR |
+
+
+
+[Go To Top](#content)
+
+---
+# Caching
+
+### Static site generation
+SSG is like pre-generating and caching the full page during build.
+
+| What is Cached?                       | When is it Cached? | How Long Does It Stay Cached? |
+| ------------------------------------- | ------------------ | ----------------------------- |
+| The **HTML of the page**           | At **build time**  | Until you rebuild the app     |
+|  The **data fetched** (via `fetch`) | Also at build time | Same — fixed at build time    |
+
+**Example:**
+
+```tsx
+import React from 'react'
+
+export default async function page() {
+  const data = await getData()
+    console.log(data)
+  return (
+    <div>
+      {
+        data.map((user:any) => (
+          <div key={user.id}>
+            <h1>{user.name}</h1>
+            <p>{user.email}</p>
+          </div>
+        ))
+      }
+    </div>
+  )
+}
+       
+export async function getData() {
+    const res = await fetch('https://jsonplaceholder.typicode.com/users')
+    const data = await res.json()
+    return data
+}
+```
+- here the data of user if fetch at the build time
+- once it fetch it save that data permanently 
+- whenever a user visit a page it get already fetch data which is fetch at build time
+- as there is no fetch request on every visit it has high performance
+- as data is set permanently during build time visited page may lack a availability of updated data
+
+**Note:**
+> for fetch request Next.js by default caching id set to force-cache 
+
+###  Incremental Static Regeneration (ISR)
+Instead of regenerating the whole site during build (like SSG), ISR lets you update individual static pages in the background after deployment.
+
+Here we use revalidate time that tells Next.js how often to regenerate a static page in the background.
+
+**How ISR works**
+1. At build time, the pag e is statically generated (like SSG).
+2. When a user visits the page, if it's older than revalidate time, Next.js regenerates it in the background.
+3. The new version replaces the old one, and is used for future users.
+
+**Example:**
+```js
+import React from 'react'
+
+export default async function page() {
+  const data = await getData()
+    console.log(data)
+  return (
+    <div>
+      {
+        data.map((user:any) => (
+          <div key={user.id}>
+            <h1>{user.name}</h1>
+            <p>{user.email}</p>
+          </div>
+        ))
+      }
+    </div>
+  )
+}
+       
+export async function getData() {
+    const res = await fetch('https://jsonplaceholder.typicode.com/users',{
+        // Enable ISR: revalidate every 60 seconds
+        next: { revalidate: 60 }
+    })
+    const data = await res.json()
+    return data
+} 
+```
+This means:\
+Regenerate this page in the background at most once every 60 seconds.
+
+**How It Works (Step-by-Step)**
+1. Page is built statically and cached.
+
+2. A user visits the page:
+    - If it’s less than 60 seconds old, serve the cached page.
+    - If it’s older than 60 seconds, serve the cached page and regenerate the page in the background.
+3. The new version replaces the old one for the next user.
+
+**Notes**
+> This only works in Server Components. (app/ directory components are Server by default)
+
+> ISR does not work with client-side fetch() or useEffect — that’s just client-side fetching, not static generation.
+
+###   Server-Side Rendering (SSR)
+To perform Server-Side Rendering (SSR) in the app/ directory (App Router) in Next.js, you need to:
+
+Use fetch() with { cache: 'no-store' }
+This tells Next.js: "Do not cache — re-fetch data on every request."
+
+```tsx
+async function getUsers() {
+  const res = await fetch('https://jsonplaceholder.typicode.com/users', {
+    cache: 'no-store'  // ← This enables SSR
+  });
+  return res.json();
+}
+
+export default async function UsersPage() {
+  const users = await getUsers();
+
+  return (
+    <div>
+      <h1>Server-Side Rendered Users</h1>
+      {users.map((user) => (
+        <div key={user.id}>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+ **What's Happening Here?**
+
+- `cache: 'no-store'` tells Next.js to:
+
+  - It disables Next.js’s default caching (`force-cache`)
+  - Skip static generation
+  - Re-fetch the data on every request
+  - Render the HTML on the server at request time (SSR)
+
+### Summary
+| Behavior | Fetch Option                     | When is Data Fetched?      |
+| -------- | -------------------------------- | -------------------------- |
+| **SSG**  | Default (`cache: 'force-cache'`) | At build time              |
+| **ISR**  | `next: { revalidate: N }`        | At build + every N seconds |
+| **SSR**  | `cache: 'no-store'`              | On every request           |
 
 
 
