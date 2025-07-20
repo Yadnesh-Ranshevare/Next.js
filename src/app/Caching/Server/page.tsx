@@ -19,8 +19,8 @@ export default async function page() {
   )
 }
        
-export async function getData() {
-    const res = await fetch('http://localhost:3000/api/getdata',{
+async function getData() {
+    const res = await fetch('http://localhost:4000/api/getdata',{
         // Enable ISR: revalidate every 60 seconds
         cache: 'no-store' 
     })

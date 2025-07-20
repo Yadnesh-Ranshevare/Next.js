@@ -165,13 +165,15 @@ You open an empty box and wait for the contents to be delivered later.
 ---
 # Caching
 
+> visit the **.next** folder to explore the cached data in Nextjs
+
 ### Static site generation
 SSG is like pre-generating and caching the full page during build.
 
 | What is Cached?                       | When is it Cached? | How Long Does It Stay Cached? |
 | ------------------------------------- | ------------------ | ----------------------------- |
 | The **HTML of the page**           | At **build time**  | Until you rebuild the app     |
-|  The **data fetched** (via `fetch`) | Also at build time | Same — fixed at build time    |
+|  The **data fetched** (via `fetch`) | Also at build time |Until you rebuild the app    |
 
 **Example:**
 
@@ -195,20 +197,20 @@ export default async function page() {
   )
 }
        
-export async function getData() {
+async function getData() {
     const res = await fetch('https://jsonplaceholder.typicode.com/users')
     const data = await res.json()
     return data
 }
 ```
 - here the data of user if fetch at the build time
-- once it fetch it save that data permanently 
-- whenever a user visit a page it get already fetch data which is fetch at build time
+- once it fetch it cache that data permanently until the next build
+- whenever a user visit a page it get cache data which is fetch and cache at build time
 - as there is no fetch request on every visit it has high performance
 - as data is set permanently during build time visited page may lack a availability of updated data
 
 **Note:**
-> for fetch request Next.js by default caching id set to force-cache 
+> for default fetch request Next.js by default set cache to force-cache 
 
 ###  Incremental Static Regeneration (ISR)
 Instead of regenerating the whole site during build (like SSG), ISR lets you update individual static pages in the background after deployment.
@@ -241,7 +243,7 @@ export default async function page() {
   )
 }
        
-export async function getData() {
+async function getData() {
     const res = await fetch('https://jsonplaceholder.typicode.com/users',{
         // Enable ISR: revalidate every 60 seconds
         next: { revalidate: 60 }
@@ -312,7 +314,134 @@ export default async function UsersPage() {
 | **ISR**  | `next: { revalidate: N }`        | At build + every N seconds |
 | **SSR**  | `cache: 'no-store'`              | On every request           |
 
+### Note about SSG and SSR
+- in case of dynamic API call if next js know about all possible API's it will cache them all
 
+**Example:**
+```js
+async function getUsers({gender}) {
+  const res = await fetch(`https://jsonplaceholder.typicode.com/users/${gender}`);
+  return res.json();
+}
+```
+- let say some how next js know gender can either be a `Male` or `Female`
+- Therefor all possible API's
+```
+"https://jsonplaceholder.typicode.com/users/Male"
+```
+```
+"https://jsonplaceholder.typicode.com/users/Female"
+```
+- now next js will cache both of their response at build time and serve according to request from cache
+- in simple words in dynamic API call if next js knows about the all API's it will cache them all and act as a SSG
+- But if next js doesn't know about the API combinations then it will automatically shift itself into SSR
+
+### Using Axios
+for SSG and SSR we use `dynamic` directive in Nextjs app directory
+
+it tells Nextjs hoe to render a route: whether it should be a static, dynamic or use cache
+
+| value | MEaning|
+| ---| ---|
+| 'auto'(default) | Nextjs auto detect based on usage|
+| 'force-static' | force static generation |
+| 'force-dynamic' | force dynamic rendering (SSR - render on every request)
+
+### 1. SSG
+```tsx
+import axios from "axios"
+
+export const dynamic = "force-static"   // or just omit this line (default)
+
+
+async function getUsers() {
+  const res = await axios.get('https://jsonplaceholder.typicode.com/users');
+  return res.data;
+}
+
+export default async function UsersPage() {
+  const users = await getUsers();
+
+  return (
+    <div>
+      <h1>Server-Side Rendered Users</h1>
+      {users.map((user) => (
+        <div key={user.id}>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+```ts
+export const dynamic = "force-static"
+```
+- this line will force page to be static therefor whatever response the API give will cache at build time
+### 2. SSR
+```tsx
+import axios from "axios"
+
+export const dynamic = "force-dynamic"   // same as no-store
+
+
+async function getUsers() {
+  const res = await axios.get('https://jsonplaceholder.typicode.com/users');
+  return res.data;
+}
+
+export default async function UsersPage() {
+  const users = await getUsers();
+
+  return (
+    <div>
+      <h1>Server-Side Rendered Users</h1>
+      {users.map((user) => (
+        <div key={user.id}>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+```ts
+export const dynamic = "force-dynamic"
+```
+- this line will force page to be render on server therefor response will not be cache at build time
+
+
+### ISR
+for ISR we use revalidate a spacial Next.js export which tells Next.js to cache the result of the current page and regenerate it in the background after particular time has passed
+```tsx
+import axios from "axios"
+
+export const revalidate = 60   // revalidate after 60 seconds
+
+
+async function getUsers() {
+  const res = await axios.get('https://jsonplaceholder.typicode.com/users');
+  return res.data;
+}
+
+export default async function UsersPage() {
+  const users = await getUsers();
+
+  return (
+    <div>
+      <h1>Server-Side Rendered Users</h1>
+      {users.map((user) => (
+        <div key={user.id}>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
 
 [Go To Top](#content)
 
