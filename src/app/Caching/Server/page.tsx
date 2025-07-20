@@ -20,11 +20,11 @@ export default async function page() {
 export async function getData() {
     const res = await fetch('http://localhost:3000/api/getdata',{
         // Enable ISR: revalidate every 60 seconds
-        next: { revalidate: 60 }
+        cache: 'no-store' 
     })
     // const res = await fetch('https://jsonplaceholder.typicode.com/users',{
     //     // Enable ISR: revalidate every 60 seconds
-    //     next: { revalidate: 60 }
+    //     cache: 'no-store' 
     // })
     const data = await res.json()
   return data

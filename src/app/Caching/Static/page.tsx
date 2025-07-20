@@ -18,7 +18,8 @@ export default async function page() {
 }
        
 export async function getData() {
-    const res = await fetch('https://jsonplaceholder.typicode.com/users')
+    const res = await fetch('http://localhost:3000/api/getdata')
+    // const res = await fetch('https://jsonplaceholder.typicode.com/users')
     const data = await res.json()
   return data
 }
