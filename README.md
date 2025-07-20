@@ -1,9 +1,15 @@
 # Content
 1. [Introduction](#introduction)
-2. [SSG, SSR & CSR](#ssg-ssr--csr)
-4. [Caching](#caching)
+2. Rendering in Next js
+    - [Basics of Rendering in Next js](#basics-of-rendering-in-next-js)
+    - [SSG, SSR & CSR](#ssg-ssr--csr)
 4. [Server Action](#server-action)
-5. [useActionState Hook](#useactionstate-hook)
+5. Caching in next js
+    - [Basic of Caching in next js](#basic-of-caching-in-next-js)
+    - [unstable_cache](#unstable-cache)
+    - [use cache](#use-cache)
+    - [revalidateTag](#revalidatetag)
+6. [useActionState Hook](#useactionstate-hook)
 
 # Introduction
 Next.js is a React-based web development framework used to build fast and user-friendly websites and web apps. It simplifies and adds extra power to React by providing features like:
@@ -36,7 +42,7 @@ npm run dev
 [Go To Top](#content)
 
 ---
-# Rendering in Next js
+# Basics of Rendering in Next js
 
 ### Pre-rendering
 Next.js generates the HTML for each page before sending it to the browser, instead of building the page entirely with JavaScript on the client.
@@ -163,7 +169,100 @@ You open an empty box and wait for the contents to be delivered later.
 [Go To Top](#content)
 
 ---
-# Caching
+# Server Action
+- In Next.js, a Server Action is a way to write functions that run only on the server, even though they're called from the client-side (like from a form or button click). This makes it easy to securely update databases, handle form submissions, or do backend logic without creating separate API routes.
+
+- **Simple Definition:**\
+Server Actions are server-side functions that can be triggered from the client, directly inside your components — without needing a separate API route.
+
+In traditional web apps, you often:
+1. Submit a form →
+2. Send a request to an API route (like `/api/contact`) →
+3. The API does backend stuff (e.g., DB insert) →
+4. You get a response.
+
+With Server Actions, you skip the API route.\
+You write the server-side logic directly inside your component file, and Next.js will run that code on the server only.
+
+### How to do
+1. create the Server Component ( Component that runs only on the server) by writing `"use server"` at the top. 
+2. inside this component write the code for server action
+3. whenever you want to use this server action at client side just import this action into that file and use it however you want 
+
+
+### Example
+**Step 1: Server Action Function**
+```js
+// app/actions/saveName.js
+
+'use server'; // 👈 Tells Next.js this function runs only on the server
+
+export async function saveName(formData) {
+  const name = formData.get('name');
+
+  // Imagine saving to a database here
+  console.log('Saving name on the server:', name);
+
+  // You could also return a result if needed
+  return { message: `Saved ${name}` };
+}
+```
+**Step 2: Create a Form That Uses This Action**
+```jsx
+// app/page.jsx or app/page.tsx
+
+import { saveName } from './actions/saveName';
+
+export default function Page() {
+  return (
+    <form action={saveName}>
+      <input type="text" name="name" placeholder="Enter your name" />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+**What's Happening?**
+- When you submit the form, the `saveName` function is called on the server.
+
+- No API route is used — Next.js automatically serializes the data and handles the call.
+
+**Note: If you want to trigger a Server Action without a form, it's a bit more complex (needs React Server Components and Client Component interaction), but possible.**
+
+### Advantages
+| **Advantage**                     | **Explanation**                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| 🔐 **Secure by default**          | Code runs only on the server and is never exposed to the client/browser.        |
+| 🚫 **No API routes needed**       | You don’t need to create separate `/api/` endpoints — logic is embedded nearby. |
+| 🧼 **Simplifies form handling**   | Native HTML forms can directly call server actions — no need for `fetch()`.     |
+| 🧹 **Cleaner codebase**           | Server-side logic stays close to UI components, reducing file switching.        |
+| 🛡️ **Type-safe with TypeScript** | Shared types between frontend and backend become easier to manage.              |
+| ⚡ **Optimized by Next.js**        | Server Actions are built-in and optimized by the framework for performance.     |
+| ✂️ **No manual fetch/axios**      | You don’t need to manually write fetch calls — the form does it for you.        |
+| 📦 **Minimal client JS needed**   | Works even with JavaScript disabled — good for SEO and initial load speed.      |
+
+### Disadvantages
+| **Disadvantage**                     | **Explanation**                                                                  |
+| ------------------------------------ | -------------------------------------------------------------------------------- |
+| ⚠️ **Still experimental**            | The feature may change or break as it's not fully stable in all versions yet.    |
+| 🗂️ **Only in App Router**           | Works only with the `/app` directory; not compatible with the older `/pages`.    |
+| 🔁 **Causes full page reload**       | Without JavaScript enhancement, form submissions reload the entire page.         |
+| 🧠 **Can be confusing**              | Mixing server and client logic in one file can confuse beginners.                |
+| 🔘 **Hard to trigger without forms** | Not simple to call on button clicks or client-side actions without setup.        |
+| 🌐 **Limited hosting support**       | Requires modern backend support (e.g., Vercel or Edge-compatible platforms).     |
+| 🌍 **Not usable as API**             | Can’t be accessed by external apps like mobile clients — no external API access. |
+| 📴 **Limited real-time feedback**    | Without client JS, it's hard to show spinners or success messages dynamically.   |
+
+
+[Go To Top](#content)
+
+---
+
+
+
+
+
+# Basic of Caching in next js
 
 > visit the **.next** folder to explore the cached data in Nextjs
 
@@ -446,89 +545,254 @@ export default async function UsersPage() {
 [Go To Top](#content)
 
 ---
-# Server Action
-- In Next.js, a Server Action is a way to write functions that run only on the server, even though they're called from the client-side (like from a form or button click). This makes it easy to securely update databases, handle form submissions, or do backend logic without creating separate API routes.
 
-- **Simple Definition:**\
-Server Actions are server-side functions that can be triggered from the client, directly inside your components — without needing a separate API route.
+# Unstable Cache
+unstable_cache allows you to cache the result of database queries and other async functions. To use it, wrap unstable_cache around the function. For example:
+```tsx
+import { unstable_cache } from 'next/cache'
+import React from 'react'
 
-In traditional web apps, you often:
-1. Submit a form →
-2. Send a request to an API route (like `/api/contact`) →
-3. The API does backend stuff (e.g., DB insert) →
-4. You get a response.
-
-With Server Actions, you skip the API route.\
-You write the server-side logic directly inside your component file, and Next.js will run that code on the server only.
-
-### How to do
-1. create the Server Component ( Component that runs only on the server) by writing `"use server"` at the top. 
-2. inside this component write the code for server action
-3. whenever you want to use this server action at client side just import this action into that file and use it however you want 
-
-
-### Example
-**Step 1: Server Action Function**
-```js
-// app/actions/saveName.js
-
-'use server'; // 👈 Tells Next.js this function runs only on the server
-
-export async function saveName(formData) {
-  const name = formData.get('name');
-
-  // Imagine saving to a database here
-  console.log('Saving name on the server:', name);
-
-  // You could also return a result if needed
-  return { message: `Saved ${name}` };
+type dataType = {
+  id: number,
+  name: string
 }
-```
-**Step 2: Create a Form That Uses This Action**
-```jsx
-// app/page.jsx or app/page.tsx
 
-import { saveName } from './actions/saveName';
-
-export default function Page() {
+export default async function page() {
+  const data = await getData()
+    
   return (
-    <form action={saveName}>
-      <input type="text" name="name" placeholder="Enter your name" />
-      <button type="submit">Submit</button>
+    <form >
+      {
+        data.map((user:dataType) => (
+          <div key={user.id}>
+            <h1>{user.name}</h1>
+          </div>
+        ))
+      }
+      
     </form>
-  );
+  )
+}
+
+const getData = unstable_cache(async()=>{
+    const res = await fetch('http://localhost:4000/api/getdata')
+    const data = await res.json()
+    return data
+})
+```
+- in above code snippet the response of getData function will get cached 
+
+- this `unstable_cache` function accept second parameter which defines a **unique cache key**. This helps Next.js know when to reuse cached data and when to create a new cache entry.
+
+```ts
+const getData = unstable_cache(async(id:number)=>{
+    const res = await fetch(`http://localhost:4000/api/getdata/${id}`)
+    const data = await res.json()
+    return data
+},[id])
+```
+Here:
+
+- If you pass `['123']`, it caches user 123.
+- if you again make request for `['123']` then it return the cache value
+- If you later pass `['456']`, it creates a new cache for user 456.
+
+### This key (`[Id]`) tells Next.js:
+>“Hey, cache this result per Id — if I ask again with the same Id, just return the cached data instead of calling the API again.”
+
+### If you use `[]` (empty array):
+You're saying:
+>“This function always returns the same result. Just cache one result and reuse it forever until it's revalidated.”
+### if you didn't provide second parameter
+If you don’t provide a cache key, Next.js still caches the function, but you can’t cache based on dynamic parameters.
+```ts
+const getData = unstable_cache(async(id:number)=>{
+    const res = await fetch(`http://localhost:4000/api/getdata/${id}`)
+    const data = await res.json()
+    return data
+})
+```
+Then in code:
+```ts
+await getData(1)
+await getData(2)
+```
+Even though you're calling with different ids, both calls return the same cached result from the first call.
+
+Because Next.js can’t differentiate between `getData(1)` and `getData(2)` without a cache key.
+
+
+
+### The function accepts a third optional object to define how the cache should be revalidated. It accepts:
+- `tags:` an array of tags used by Next.js to revalidate the cache.
+- `revalidate:` the number of seconds after cache should be revalidated.
+```tsx
+const getData = unstable_cache(async()=>{
+    const res = await fetch('http://localhost:4000/api/getdata')
+    const data = await res.json()
+    return data
+},[],{
+    tags: ['users'],
+    revalidate: 60  // revalidate after 60 second
+})
+```
+
+### Another syntax
+```tsx
+async function getUser(userId: string) {
+  const res = await fetch(`http://localhost:4000/api/user/${userId}`)
+  return await res.json()
+}
+
+
+const cachedGetUser = unstable_cache(
+  getUser,               // your fetch function
+  [userId],              // ← unique cache key based on userId
+  { tags: ['user'] }
+)
+```
+
+
+[Go To Top](#content)
+
+---
+# use cache
+> it is a experimental feature for Next.js v15
+
+The `use cache` directive allows you to mark the route, React component, or a function as a cacheable. it can be used at the top of s file ot indicate that all exports in the file should be cached, or inline at the top of the function or component to cache the return value 
+
+when you use `use cache` at top of layout or page, the route segment will be pre-rendered, allowing it to later be revalidate
+
+
+`use cache` is currently an experimental feature. To enable it, add the `useCache` option to your `next.config.ts` file:
+```ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  experimental:{
+    useCache:true,
+  }
+};
+
+export default nextConfig;
+```
+Then, add the `use cache` at top of the file, component or function level
+### 1. file level
+```tsx
+"use cache"
+export async function page(){
+  return(
+    <div>
+      {/*  ...  */}
+    <div/>
+  )
 }
 ```
-**What's Happening?**
-- When you submit the form, the `saveName` function is called on the server.
+### 2. component level
+```tsx
+"use cache"
+export async function myComponent(){
+  return(
+    <div>
+      {/*  ...  */}
+    <div/>
+  )
+}
+```
+### 3. Function level
+```tsx
+"use cache"
+export async function getData(){
+  const res = await fetch('http://localhost:4000/api/getdata')
+  const data = await res.json()
+  return data
+}
+```
 
-- No API route is used — Next.js automatically serializes the data and handles the call.
+[Go To Top](#content)
 
-**Note: If you want to trigger a Server Action without a form, it's a bit more complex (needs React Server Components and Client Component interaction), but possible.**
+---
+# revalidateTag
+revalidateTag is used to revalidate cache entries based on a tag and following an event. To use it with fetch, start by tagging the function with the next.tags option:
 
-### Advantages
-| **Advantage**                     | **Explanation**                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| 🔐 **Secure by default**          | Code runs only on the server and is never exposed to the client/browser.        |
-| 🚫 **No API routes needed**       | You don’t need to create separate `/api/` endpoints — logic is embedded nearby. |
-| 🧼 **Simplifies form handling**   | Native HTML forms can directly call server actions — no need for `fetch()`.     |
-| 🧹 **Cleaner codebase**           | Server-side logic stays close to UI components, reducing file switching.        |
-| 🛡️ **Type-safe with TypeScript** | Shared types between frontend and backend become easier to manage.              |
-| ⚡ **Optimized by Next.js**        | Server Actions are built-in and optimized by the framework for performance.     |
-| ✂️ **No manual fetch/axios**      | You don’t need to manually write fetch calls — the form does it for you.        |
-| 📦 **Minimal client JS needed**   | Works even with JavaScript disabled — good for SEO and initial load speed.      |
+### 1. using basic fetch call
+```tsx
+export async function getUserById(id: string) {
+  const data = await fetch('http://localhost:4000/api/getdata', {
+    next: {
+      tags: ['user'],
+    },
+  })
+}
+```
+### 2. using unstable_cache
+```tsx
+const getData = unstable_cache(async()=>{
+    const res = await fetch('http://localhost:4000/api/getdata')
+    const data = await res.json()
+    return data
+},[],{
+    tags: ['users']
+})
+```
+### 3. using use cache
+```tsx
+import {unstable_cacheTag as cacheTag} from 'next/cache'
 
-### Disadvantages
-| **Disadvantage**                     | **Explanation**                                                                  |
-| ------------------------------------ | -------------------------------------------------------------------------------- |
-| ⚠️ **Still experimental**            | The feature may change or break as it's not fully stable in all versions yet.    |
-| 🗂️ **Only in App Router**           | Works only with the `/app` directory; not compatible with the older `/pages`.    |
-| 🔁 **Causes full page reload**       | Without JavaScript enhancement, form submissions reload the entire page.         |
-| 🧠 **Can be confusing**              | Mixing server and client logic in one file can confuse beginners.                |
-| 🔘 **Hard to trigger without forms** | Not simple to call on button clicks or client-side actions without setup.        |
-| 🌐 **Limited hosting support**       | Requires modern backend support (e.g., Vercel or Edge-compatible platforms).     |
-| 🌍 **Not usable as API**             | Can’t be accessed by external apps like mobile clients — no external API access. |
-| 📴 **Limited real-time feedback**    | Without client JS, it's hard to show spinners or success messages dynamically.   |
+export async function getData(){
+  "use cache"
+  cacheTag("user")
+  const res = await fetch('http://localhost:4000/api/getdata')
+  const data = await res.json()
+  return data
+}
+```
+Now whenever you call `revalidateTag('user)` it will revalidate the cache data
+> you can call `revalidateTag()` only from server component or server action i.e, you cannot call revalidateTag from client side
+
+```tsx
+import { revalidateTag, unstable_cache } from 'next/cache'
+import React from 'react'
+
+type dataType = {
+  id: number,
+  name: string
+}
+
+export default async function page() {
+  const data = await getData()
+
+  async function refresh(){   // will be treated as server action
+    "use server"
+    revalidateTag('users')
+  }
+    
+  return (
+    <form onSubmit={refresh}>
+      {
+        data.map((user:dataType) => (
+          <div key={user.id}>
+            <h1>{user.name}</h1>
+          </div>
+        ))
+      }
+      <button>refresh</button>
+    </form>
+  )
+}
+      
+const getData = unstable_cache(async()=>{
+    const res = await fetch('http://localhost:4000/api/getdata')
+    const data = await res.json()
+    return data
+},[],{
+    tags: ['users'],
+    revalidate: 60
+})
+```
+Here:
+- once you click the button it will trigger the refresh function which will in turns trigger the `revalidate('user')`
+- once the `revalidate('user')` it will revalidate the cached data
 
 
 [Go To Top](#content)
