@@ -781,6 +781,7 @@ export default async function page() {
   )
 }
       
+// you can use any type of caching mechanism you want it will not affect the above code 
 const getData = unstable_cache(async()=>{
     const res = await fetch('http://localhost:4000/api/getdata')
     const data = await res.json()
@@ -792,7 +793,7 @@ const getData = unstable_cache(async()=>{
 ```
 Here:
 - once you click the button it will trigger the refresh function which will in turns trigger the `revalidate('user')`
-- once the `revalidate('user')` it will revalidate the cached data
+- once the `revalidate('user')` gets trigger, it will revalidate the cached data
 
 
 [Go To Top](#content)
