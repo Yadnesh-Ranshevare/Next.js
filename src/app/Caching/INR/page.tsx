@@ -1,4 +1,8 @@
 import React from 'react'
+type dataType = {
+  id: number,
+  name: string
+}
 
 export default async function page() {
   const data = await getData()
@@ -6,10 +10,9 @@ export default async function page() {
   return (
     <div>
       {
-        data.map((user:any) => (
+        data.map((user:dataType) => (
           <div key={user.id}>
             <h1>{user.name}</h1>
-            <p>{user.email}</p>
           </div>
         ))
       }
