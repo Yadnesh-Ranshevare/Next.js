@@ -582,7 +582,7 @@ const getData = unstable_cache(async()=>{
 ```
 - in above code snippet the response of getData function will get cached 
 
-- this `unstable_cache` function accept second parameter which defines a **unique cache key**. This helps Next.js know when to reuse cached data and when to create a new cache entry.
+- this `unstable_cache` function accept second parameter which defines a **unique cache key**. This is use to add custom id's to cache key
 
 ```ts
 const getData = unstable_cache(async(id:number)=>{
@@ -591,36 +591,16 @@ const getData = unstable_cache(async(id:number)=>{
     return data
 },[id])
 ```
-Here:
 
-- If you pass `['123']`, it caches user 123.
-- if you again make request for `['123']` then it return the cache value
-- If you later pass `['456']`, it creates a new cache for user 456.
-
-### This key (`[Id]`) tells Next.js:
->“Hey, cache this result per Id — if I ask again with the same Id, just return the cached data instead of calling the API again.”
-
-### If you use `[]` (empty array):
-You're saying:
->“This function always returns the same result. Just cache one result and reuse it forever until it's revalidated.”
-### if you didn't provide second parameter
-If you don’t provide a cache key, Next.js still caches the function, but you can’t cache based on dynamic parameters.
-```ts
+### For dynamic 
+```js
 const getData = unstable_cache(async(id:number)=>{
-    const res = await fetch(`http://localhost:4000/api/getdata/${id}`)
+    const res = await fetch(`http://localhost:4000/api/getuser/${id}`)
     const data = await res.json()
     return data
 })
 ```
-Then in code:
-```ts
-await getData(1)
-await getData(2)
-```
-Even though you're calling with different ids, both calls return the same cached result from the first call.
-
-Because Next.js can’t differentiate between `getData(1)` and `getData(2)` without a cache key.
-
+for every value of `id` it will create the new cache entry
 
 
 ### The function accepts a third optional object to define how the cache should be revalidated. It accepts:
@@ -650,6 +630,51 @@ const cachedGetUser = unstable_cache(
   [userId],              // ← unique cache key based on userId
   { tags: ['user'] }
 )
+```
+
+### Example
+```tsx
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
+import React from 'react'
+
+type dataType = {
+  id: number,
+  name: string
+}
+
+async function getData(id:number){
+    const fun = unstable_cache(async()=>{
+        const res = await fetch(`http://localhost:4000/api/getuser/${id}`)
+        const data = await res.json()
+        return data
+    },[`${id}`])  // it always accept string
+    return await fun()
+}
+
+export default async function page({params}:{params:Promise<{id:number}>}) {
+    const id = (await params).id
+    const data = await getData(id)
+    console.log(data)
+  
+    async function refresh(){
+        "use server"
+        revalidateTag('users')
+    }
+      
+    return (
+      <form onSubmit={refresh}>
+        {
+          data.map((user:dataType) => (
+            <div key={user.id}>
+              <h1>{user.name}</h1>
+            </div>
+          ))
+        }
+        <button>ref</button>
+        
+      </form>
+    )
+}
 ```
 
 
@@ -794,6 +819,24 @@ const getData = unstable_cache(async()=>{
 Here:
 - once you click the button it will trigger the refresh function which will in turns trigger the `revalidate('user')`
 - once the `revalidate('user')` gets trigger, it will revalidate the cached data
+
+
+
+
+
+[Go To Top](#content)
+
+---
+
+# Problem With too Much Caching
+| Problem                     | Description                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 🧠 **Memory Overload**      | Caching too many dynamic variations (like different user IDs) can overload server memory (RAM).                                |
+| 🐢 **Slower Performance**   | Regenerating or revalidating large numbers of cache entries can slow down server responses.                                    |
+| ⚠️ **Complex Invalidation** | When everything is cached, keeping it fresh becomes hard. `revalidateTag()` or `on-demand revalidation` may become unreliable. |
+| 💽 **Disk/Storage Limits**  | Hosting platforms like Vercel have limits. Caching large responses may exceed storage quotas.                                  |
+| 🔁 **Stale or Wrong Data**  | Old cached data might show up instead of new/updated info if cache isn’t properly refreshed.                                   |
+
 
 
 [Go To Top](#content)
