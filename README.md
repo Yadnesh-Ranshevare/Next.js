@@ -734,6 +734,20 @@ export async function getData(){
 }
 ```
 
+### use cacheTag to declare the tag for revalidate your data
+```tsx
+import { unstable_cacheTag as cacheTag } from 'next/cache'
+
+const getData = async()=>{
+    "use cache"
+    cacheTag("users")   // declaring the tag
+    const res = await fetch('http://localhost:4000/api/getdata')
+    const data = await res.json()
+    return data
+}
+```
+
+
 [Go To Top](#content)
 
 ---
@@ -762,11 +776,11 @@ const getData = unstable_cache(async()=>{
 ```
 ### 3. using use cache
 ```tsx
-import {unstable_cacheTag as cacheTag} from 'next/cache'
+import {unstable_cacheTag as cacheTag} from 'next/cache'  // import cacheTag like time
 
 export async function getData(){
   "use cache"
-  cacheTag("user")
+  cacheTag("user")  // declare the tag using like this
   const res = await fetch('http://localhost:4000/api/getdata')
   const data = await res.json()
   return data
