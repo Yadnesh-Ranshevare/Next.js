@@ -4,6 +4,7 @@
     - [Basics of Rendering in Next js](#basics-of-rendering-in-next-js)
     - [SSG, SSR & CSR](#ssg-ssr--csr)
     - [What do you mean by rendering?](#what-do-you-mean-by-rendering)
+    - [Hydration](#hydration)
 4. [Server Action](#server-action)
 5. Caching in next js
     - [Basic of Caching in next js](#basic-of-caching-in-next-js)
@@ -265,7 +266,7 @@ export default function Home() {
 **What happen here**
 
 - During hydration, React constructs the virtual DOM in the browser for the existing server-rendered HTML.
-- It then compares this virtual DOM with the HTML and updates only what’s different to make the page interactive.
+- It then compares this virtual DOM with the HTML and updates only what’s different to make the page interactive without re-rendering the whole page.
 - Server render:
     - The server builds HTML and sends it to the browser.
     - This is visible immediately to the user.
@@ -273,13 +274,14 @@ export default function Home() {
     - React downloads the JS bundle and checks the HTML against its virtual DOM.
     - If everything matches, React just attaches interactivity (buttons, state, etc.) without changing the page visually.
     - If there’s a mismatch (dynamic content, random values), React updates the HTML
+    - Id does not re-render that page it's only update the page
 
 **Why Hydration error exist**
 - Hydration error does not cause the application to crash, its more like a warning.
 - but in some cases hydration error may cause the flickering of the data on client side, especially if user have poor internet connection
 - let say in our previous example After 1 second, the time displayed may update from 11:02:34 (server-rendered) to 11:02:35 (client-rendered).
-- This mismatch is caused by React generating a new value on the client, not by the network.
-- A slow network only delays when the change becomes visible to the user, which can make the flicker more noticeable.
+- This mismatch is caused by React generating a new value on the client and on the server
+- A slow network delays the changes becoming visible to the user, which can make the flicker more noticeable.
 - this badly affect the user experience
 - in most of the cases this time is usually about 0.01 second which is not visible 
 
