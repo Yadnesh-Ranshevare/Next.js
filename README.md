@@ -172,7 +172,7 @@ You open an empty box and wait for the contents to be delivered later.
 ---
 # What do you mean by rendering?
 - Whenever you deploy your Next.js project it first create its build version
-- in next js during building our application convert into two type of files a static files (hml, css, etc) and js bundles that hold javascript code to render the component
+- in next js during building our application convert into two type of files a static files (html, css, etc) and js bundles (hold javascript code to render the component)
 1. **Static files:**
     - These include things like HTML, CSS, images, fonts, and pre-rendered pages.
     - These files are mostly served directly by the server or CDN without extra computation.
@@ -187,6 +187,7 @@ You open an empty box and wait for the contents to be delivered later.
 - **Note:**
     - There is empty `.html` file assign with js bundles (if hold the code for rendering the component)
     - This `.html` file is send to client browser on clients request
+    - Once the user open this `.html` file the js bundle associate with the `.html` file is then get downloaded to make this `.html` file interactive
 
 ### Static Site Generation(SSG)
 **In Static SIte Generation rendering occur at the build time**
@@ -210,6 +211,77 @@ You open an empty box and wait for the contents to be delivered later.
 - Once the user open this `.html` file js bundle get executed rendering the page at client side
 
 
+
+
+
+
+[Go To Top](#content)
+
+---
+
+# Hydration
+**Linking the downloaded JS bundles to the pre-rendered HTML so the page becomes interactive.**
+
+Note:
+hydration does not happen in pure CSR (Client-Side Rendering). Here’s why, simply:
+- The server sends almost no HTML—usually just a blank `<div id="root"></div>`.
+- The browser downloads the JS bundle, which then renders the entire page on the client.
+- Since there is no pre-rendered HTML, there’s nothing to “hydrate.”
+
+**Hydration in Next.js means:**
+1. When a Next.js page loads, the server sends pre-rendered HTML.
+2. The page is visible immediately, but buttons and interactive elements don’t work yet.
+3. Browser downloads the JS bundles for the page.
+4. React attaches those JS bundles to the already loaded HTML.
+5. After this, the page becomes interactive (buttons work, state updates, etc.).
+
+**Note:**
+- The HTML is already visible before hydration.
+- Without hydration, the page looks fine but cannot respond to user actions.
+- During hydration react constructs the virtual DOM in the browser and compares it with the existing HTML to attach interactivity.
+
+
+### Hydration error
+**It occur when page rendered at server doesn't match with that of page rendered at client**
+
+Example:
+```jsx
+// pages/index.js
+import { useState } from "react";
+
+export default function Home() {
+  const [time, setTime] = useState(new Date().toLocaleTimeString());  // date will also hold the time
+
+  return <h1>{time}</h1>;
+}
+```
+- let say this component render on server at 11:02:34:08 
+- At client when react hydrate it will show 11:02:34:09
+- this 0.01 second delay is because of the server and client generated different values as the server and client run the code at different times and environments
+- Therefor the component rendered on server and on client(after hydration) renders the different time 
+- The HTML generated on the server differs from the HTML React would generate on the client, causing a hydration mismatch.
+- This will cause the hydration error 
+
+**What happen here**
+
+- During hydration, React constructs the virtual DOM in the browser for the existing server-rendered HTML.
+- It then compares this virtual DOM with the HTML and updates only what’s different to make the page interactive.
+- Server render:
+    - The server builds HTML and sends it to the browser.
+    - This is visible immediately to the user.
+- Client render during hydration:
+    - React downloads the JS bundle and checks the HTML against its virtual DOM.
+    - If everything matches, React just attaches interactivity (buttons, state, etc.) without changing the page visually.
+    - If there’s a mismatch (dynamic content, random values), React updates the HTML
+
+**Why Hydration error exist**
+- Hydration error does not cause the application to crash, its more like a warning.
+- but in some cases hydration error may cause the flickering of the data on client side, especially if user have poor internet connection
+- let say in our previous example After 1 second, the time displayed may update from 11:02:34 (server-rendered) to 11:02:35 (client-rendered).
+- This mismatch is caused by React generating a new value on the client, not by the network.
+- A slow network only delays when the change becomes visible to the user, which can make the flicker more noticeable.
+- this badly affect the user experience
+- in most of the cases this time is usually about 0.01 second which is not visible 
 
 
 
