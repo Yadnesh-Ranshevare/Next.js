@@ -3,6 +3,7 @@
 2. Rendering in Next js
     - [Basics of Rendering in Next js](#basics-of-rendering-in-next-js)
     - [SSG, SSR & CSR](#ssg-ssr--csr)
+    - [What do you mean by rendering?](#what-do-you-mean-by-rendering)
 4. [Server Action](#server-action)
 5. Caching in next js
     - [Basic of Caching in next js](#basic-of-caching-in-next-js)
@@ -163,6 +164,53 @@ You open an empty box and wait for the contents to be delivered later.
 | Doesn’t change often                | ✅ SSG |
 | Needs fresh data on every visit     | ✅ SSR |
 | Is behind login or doesn't need SEO | ✅ CSR |
+
+
+
+[Go To Top](#content)
+
+---
+# What do you mean by rendering?
+- Whenever you deploy your Next.js project it first create its build version
+- in next js during building our application convert into two type of files a static files (hml, css, etc) and js bundles that hold javascript code to render the component
+1. **Static files:**
+    - These include things like HTML, CSS, images, fonts, and pre-rendered pages.
+    - These files are mostly served directly by the server or CDN without extra computation.
+    - For example, if you have a page that uses Static Site Generation (SSG) or getStaticProps, Next.js generates an HTML file for that page at build time.
+2. **JavaScript bundles:**
+    - These are the JS files that contain the React/Next.js code for your components.
+    - This JS bundles get execute at server to generate the HTML, css files 
+    - They are responsible for making the page interactive on the client-side (hydration).
+    - For example, when the HTML loads in the browser, the JS bundle “hydrates” it, attaching event listeners and enabling dynamic behavior.
+    - Next.js splits JS into chunks (per page, per shared library) to optimize loading.
+
+- **Note:**
+    - There is empty `.html` file assign with js bundles (if hold the code for rendering the component)
+    - This `.html` file is send to client browser on clients request
+
+### Static Site Generation(SSG)
+**In Static SIte Generation rendering occur at the build time**
+- when we say rendering at build time, it means our jsx/tsx covert into the static file (HTML, css, js) at the time of build
+- This static file then served directly by the server or CDN
+- Therefor when user made request for any page, server just send the ready made HTML 
+- Since browser get already rendered html file its SEO it high 
+
+### Server Side Rendering(SSR)
+**In Server Side Rendering rendering occur on the server at each request**
+- In SSR at build time our jsx/tsx convert into into js bundles and stored at server
+- Whenever a user make a request for any page this **js bundles execute at server**, creating the HTML page rendered at server
+- This server rendered HTML page then send to the client browser 
+- Since browser get already rendered html file its SEO it high 
+
+### Client Side Rendering(CSR)
+**In Client Side Rendering rendering occur at client side**
+- Similar to SSR, in CSR at build time our jsx/tsx convert into into js bundles and stored at server
+- whenever user make a request for any page this **js bundles send to client browser**, that is empty `.html` file which is assign to this js bundle is sent at users browser
+- Since browser get the empty html file its SEO is low
+- Once the user open this `.html` file js bundle get executed rendering the page at client side
+
+
+
 
 
 
